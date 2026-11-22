@@ -1,0 +1,337 @@
+<title>스타 스크래치</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="assets/icon.svg">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: phone app mockup — 4 screens behind a bottom tab bar; signup flow first. Winter-night single theme shared with the prototype. */
+:root{
+  --night:#121a33; --night2:#1b2648; --snow:#eef2fb; --frost:#9fb0d6;
+  --gold:#f2c35b; --berry:#e2546b; --pine:#3fae8a;
+  --r-common:#9fb0d6; --r-rare:#5fb6ff; --r-hero:#b98cff; --r-legend:#f2c35b; --r-limited:#ff7a93;
+  --display:"Do Hyeon","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+html{background:var(--night)}
+body{background:radial-gradient(120% 60% at 50% 0%,var(--night2),var(--night) 70%);color:var(--snow);font-family:var(--body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 0;box-sizing:border-box}
+.app{max-width:440px;margin:0 auto;height:100%;display:flex;flex-direction:column}
+.screen{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding-bottom:16px}
+h1{font-family:var(--display);font-weight:400;font-size:1.9rem;margin:0}
+h1 span{color:var(--gold)}
+h2{font-family:var(--display);font-weight:400;font-size:1.3rem;margin:0}
+.sub{color:var(--frost);margin:2px 0 0;font-size:.9rem}
+.panel{background:rgba(255,255,255,.05);border:1px solid rgba(159,176,214,.18);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+label{font-size:.85rem;color:var(--frost)}
+input,select{font:inherit;background:var(--night2);color:var(--snow);border:1px solid rgba(159,176,214,.3);border-radius:10px;padding:11px 12px;width:100%;box-sizing:border-box}
+button{font:inherit;font-family:var(--display);font-size:1.1rem;border:0;border-radius:12px;padding:12px 20px;cursor:pointer;background:var(--berry);color:#fff}
+button.alt{background:transparent;color:var(--gold);border:1px solid var(--gold);font-size:.95rem}
+button.small{font-size:.9rem;padding:7px 14px}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.note{font-size:.8rem;color:var(--frost);line-height:1.6;margin:0}
+.code{font-family:var(--mono);background:var(--night2);border:1px dashed rgba(159,176,214,.4);border-radius:10px;padding:12px;text-align:center;font-size:1.15rem;letter-spacing:.12em}
+.status{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:rgba(255,255,255,.05);border:1px solid rgba(159,176,214,.18);border-radius:12px;padding:9px 11px;min-width:0}
+.stat b{display:block;font-family:var(--mono);font-size:1.05rem;font-variant-numeric:tabular-nums}
+.stat small{color:var(--frost);font-size:.72rem}
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px}
+.slot{position:relative;width:min(230px,62vw);aspect-ratio:5/7;max-width:100%}
+.card{position:absolute;inset:0;border-radius:16px;overflow:hidden;background:var(--night2);border:3px solid var(--c,var(--r-common));display:flex;flex-direction:column;box-shadow:0 14px 34px rgba(0,0,0,.45)}
+.card .art{flex:1;display:grid;place-items:center;position:relative}
+.card .art svg{width:76%;height:auto}
+.card .tier{position:absolute;top:9px;left:9px;font-family:var(--display);font-size:.9rem;padding:2px 9px;border-radius:99px;background:var(--c);color:var(--night)}
+.card .name{font-family:var(--display);font-size:1.35rem;text-align:center}
+.card .imprint{font-family:var(--mono);font-size:.62rem;color:var(--frost);border-top:1px dashed rgba(159,176,214,.3);margin:7px 11px 0;padding:7px 0 10px;line-height:1.5;text-align:center}
+canvas.scratch{position:absolute;inset:0;width:100%;height:100%;border-radius:16px;touch-action:none}
+.empty{position:absolute;inset:0;border-radius:16px;border:2px dashed rgba(159,176,214,.35);display:grid;place-items:center;text-align:center;color:var(--frost);padding:16px;font-size:.9rem}
+.hint{min-height:1.3em;color:var(--frost);font-size:.88rem;text-align:center}
+.btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.dex{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cell{aspect-ratio:5/7;border-radius:10px;border:2px solid var(--c);background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;position:relative;min-width:0}
+.cell svg{width:78%}
+.cell .n{font-size:.66rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cell.locked{border-color:rgba(159,176,214,.18)}
+.cell.locked svg{filter:brightness(0) opacity(.35)}
+.friend{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(159,176,214,.12)}
+.friend:last-child{border-bottom:0}
+.ava{width:40px;height:40px;border-radius:50%;background:var(--night2);display:grid;place-items:center;flex-shrink:0}
+.ava svg{width:30px}
+.friend .who{flex:1;min-width:0}
+.friend .who b{display:block;font-size:.95rem}
+.friend .who small{color:var(--frost);font-size:.75rem}
+.tag{font-size:.7rem;padding:2px 8px;border-radius:99px;background:var(--night2);color:var(--frost);border:1px solid rgba(159,176,214,.3)}
+nav{display:flex;border-top:1px solid rgba(159,176,214,.2);background:var(--night);position:sticky;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;border:0;border-radius:0;color:var(--frost);font-family:var(--display);font-size:.95rem;padding:11px 0 13px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button[aria-current="true"]{color:var(--gold)}
+nav button .ic{font-size:1.25rem;line-height:1}
+.toast{position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--snow);color:var(--night);padding:10px 16px;border-radius:10px;font-size:.88rem;max-width:calc(100% - 32px);z-index:5}
+.banner{background:linear-gradient(100deg,#2a1e3f,#3b2246);border:1px solid var(--r-hero);border-radius:12px;padding:12px 14px;font-size:.88rem}
+.banner b{color:var(--gold)}
+.steps{display:flex;gap:6px;justify-content:center}
+.steps i{width:8px;height:8px;border-radius:50%;background:rgba(159,176,214,.3)}
+.steps i.on{background:var(--gold)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+td{padding:5px 0;border-bottom:1px solid rgba(159,176,214,.12)}
+td:last-child{text-align:right;font-family:var(--mono)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--c)}
+details{background:rgba(255,255,255,.04);border:1px solid rgba(159,176,214,.18);border-radius:12px;padding:10px 14px}
+summary{cursor:pointer;font-family:var(--display);font-size:1rem}
+[hidden]{display:none!important}
+</style>
+
+<div class="app">
+  <div class="screen" id="scr-kakao" hidden>
+    <div class="panel" style="margin-top:40vh;transform:translateY(-50%)">
+      <h2>다른 브라우저로 열어 주세요</h2>
+      <p class="note">카카오톡 안에서는 로그인이 끊기거나 화면이 이상하게 보일 수 있어요. 오른쪽 아래 ⋮ 메뉴에서 <b>"다른 브라우저로 열기"</b>를 눌러 주세요.</p>
+      <button class="alt small" id="kakaoCopy">주소 복사하기</button>
+      <button class="alt small" id="kakaoGo">그래도 계속하기</button>
+    </div>
+  </div>
+  <!-- ███ 가입 ███ -->
+  <div class="screen" id="scr-signup">
+    <header style="text-align:center;padding-top:20px">
+      <h1>⭐ 스타 <span>스크래치</span></h1>
+      <p class="sub">긁을수록 빛나는 나만의 카드</p>
+    </header>
+    <div class="steps"><i class="on" id="st1"></i><i id="st2"></i><i id="st3"></i></div>
+
+    <div class="panel" id="su1">
+      <h2>어떻게 부를까요?</h2>
+      <div><label for="nick">닉네임 (실명은 쓰지 마세요)</label><input id="nick" maxlength="10" placeholder="예: 반짝반짝눈사람"></div>
+      <div><label for="grade">학년</label>
+        <select id="grade">
+          <option value="">골라 주세요</option>
+          <option>초등학교 3학년</option><option>초등학교 4학년</option><option>초등학교 5학년</option><option>초등학교 6학년</option>
+          <option>중학교 1학년</option><option>중학교 2학년</option><option>중학교 3학년</option>
+          <option>고등학교 1학년</option><option>고등학교 2학년</option><option>고등학교 3학년</option>
+          <option>그 이상</option>
+        </select></div>
+      <button id="su1next" disabled>다음</button>
+      <p class="note">전화번호, 실명, 주소는 받지 않아요.</p>
+    </div>
+
+    <div class="panel" id="su2" hidden>
+      <h2>보호자 동의가 필요해요</h2>
+      <p class="note">만 14세가 안 된 친구는 법에 따라 보호자 동의를 받아야 해요. 보호자 이메일로 동의 요청을 보낼게요. 보호자가 메일 속 버튼을 누르고 확인 답장을 보내면 가입이 끝나요.</p>
+      <div><label for="pmail">보호자 이메일</label><input id="pmail" type="email" placeholder="parent@example.com"></div>
+      <button id="su2next" disabled>동의 요청 보내기</button>
+      <p class="note">메일이 안 보이면 스팸함을 확인해 달라고 말씀드리세요. 동의 기록은 안전하게 보관돼요.</p>
+    </div>
+
+    <div class="panel" id="su3" hidden>
+      <h2>복구 코드를 적어 두세요</h2>
+      <p class="note">비밀번호 대신 쓰는 열쇠예요. 폰을 바꾸거나 기록이 지워졌을 때 이 코드로 내 카드를 되찾아요. 스크린샷을 찍어 두세요!</p>
+      <div class="code" id="recovery">SNOW-····-····</div>
+      <button class="alt small" id="copyRec">코드 복사하기</button>
+      <button id="su3done">적어 뒀어요, 시작!</button>
+    </div>
+  </div>
+
+  <!-- ███ 뽑기 ███ -->
+  <div class="screen" id="scr-draw" hidden>
+    <header><h1>오늘의 <span>뽑기</span></h1><p class="sub" id="hello"></p></header>
+    <div class="banner">🎄 <b>크리스마스 팩 진행 중!</b> 25일까지 성탄 카드가 나와요. 남은 기간 <b id="xmasleft">3일</b></div>
+    <div class="status">
+      <div class="stat"><small>오늘 남은 뽑기</small><b id="left">3</b></div>
+      <div class="stat"><small>별가루</small><b id="dust">120</b></div>
+      <div class="stat"><small>영웅 보장까지</small><b id="pity">31</b></div>
+    </div>
+    <div class="stage">
+      <div class="slot" id="slot"><div class="empty">뽑기 버튼을 누르면 카드가 나와요.<br>은박을 긁어 보세요.</div></div>
+      <div class="hint" id="hint" aria-live="polite"></div>
+      <div class="btns">
+        <button id="draw">무료로 뽑기</button>
+        <button id="extra" class="alt">별가루 100으로 한 번 더</button>
+      </div>
+    </div>
+    <details><summary>확률 공개</summary><table id="odds"></table>
+      <p class="note">31번 안에 영웅 이상이 안 나오면 31번째는 꼭 영웅 이상! 겹친 카드는 별가루가 돼요.</p></details>
+  </div>
+
+  <!-- ███ 도감 ███ -->
+  <div class="screen" id="scr-dex" hidden>
+    <header><h1>도감</h1><p class="sub" id="dexcount"></p></header>
+    <div class="dex" id="dex"></div>
+    <p class="note">??? 칸은 아직 못 만난 카드예요. 숨겨진 카드는 조건을 채워야만 나와요.</p>
+  </div>
+
+  <!-- ███ 친구 ███ -->
+  <div class="screen" id="scr-friends" hidden>
+    <header><h1>친구</h1><p class="sub">친구 코드로만 추가할 수 있어요 (최대 50명)</p></header>
+    <div class="panel">
+      <label>내 친구 코드</label>
+      <div class="code" id="mycode">STAR-7F2K</div>
+      <button class="alt small" id="copyCode">코드 복사하기</button>
+    </div>
+    <div class="panel">
+      <label for="addcode">친구 코드 입력</label>
+      <div style="display:flex;gap:8px"><input id="addcode" placeholder="STAR-····" style="flex:1"><button class="small" id="addfr">요청</button></div>
+      <p class="note">상대가 수락해야 친구가 돼요. 모르는 사람 코드는 넣지 마세요.</p>
+    </div>
+    <div class="panel">
+      <h2>받은 요청</h2>
+      <div class="friend" id="req1">
+        <div class="ava" data-char="7"></div>
+        <div class="who"><b>눈덩이굴리기</b><small>중2 · 공통 친구 1명</small></div>
+        <button class="small" id="acc1">수락</button>
+        <button class="alt small" id="dec1">거절</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>내 친구 <span class="tag" id="frcount">2 / 50</span></h2>
+      <div id="frlist">
+        <div class="friend"><div class="ava" data-char="1"></div><div class="who"><b>귤좋아</b><small>어제 전설 카드를 뽑았어요!</small></div><button class="small gift">선물</button><button class="alt small block">차단</button></div>
+        <div class="friend"><div class="ava" data-char="12"></div><div class="who"><b>얼음별</b><small>도감 24장 모음</small></div><button class="small gift">선물</button><button class="alt small block">차단</button></div>
+      </div>
+    </div>
+  </div>
+
+  <nav id="nav" hidden>
+    <button data-s="draw" aria-current="true"><span class="ic">🎴</span>뽑기</button>
+    <button data-s="dex"><span class="ic">📖</span>도감</button>
+    <button data-s="friends"><span class="ic">👥</span>친구</button>
+  </nav>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const TIERS={common:{label:"일반",p:60,dust:5,color:"var(--r-common)"},rare:{label:"희귀",p:28,dust:20,color:"var(--r-rare)"},hero:{label:"영웅",p:9,dust:60,color:"var(--r-hero)"},legend:{label:"전설",p:2.5,dust:150,color:"var(--r-legend)"},limited:{label:"한정",p:0.5,dust:200,color:"var(--r-limited)"}};
+const CARDS=[["솜솜","common","#f4f6ff","#9fb0d6","bunny","scarf"],["귤냥","common","#ffb15c","#e2546b","cat","none"],["뭉치","common","#ffffff","#3fae8a","round","hat"],["도리","common","#3a4466","#ffd36b","round","scarf"],["붕이","common","#d99a4e","#7a4a1e","bear","none"],["코코","common","#8a5a3c","#f4f6ff","dog","mug"],["반짝","rare","#c9874b","#f2c35b","squirrel","star"],["호호","rare","#ff8a4c","#fff1c9","fox","none"],["딩동","rare","#7c6aa8","#f2c35b","owl","bell"],["초록","rare","#3fae8a","#f2c35b","round","star"],["따끔","hero","#6b4a3a","#e2546b","hedgehog","hat"],["설탕별","hero","#b98cff","#ffffff","bunny","star"],["오로라","hero","#5fb6ff","#b98cff","cat","scarf"],["겨울왕고래","legend","#2e5fa8","#9fe3ff","round","star"],["첫눈 요정","legend","#eef2fb","#f2c35b","bunny","bell"],["성탄밤","limited","#e2546b","#f2c35b","owl","hat"]];
+function art(c){const[,,b,a,ear,item]=c;let ears="";
+ if(ear==="bunny")ears=`<ellipse cx="38" cy="22" rx="8" ry="20" fill="${b}"/><ellipse cx="62" cy="22" rx="8" ry="20" fill="${b}"/>`;
+ if(ear==="cat"||ear==="fox")ears=`<path d="M24 40 L30 14 L44 32Z" fill="${b}"/><path d="M76 40 L70 14 L56 32Z" fill="${b}"/>`;
+ if(ear==="bear"||ear==="squirrel")ears=`<circle cx="28" cy="34" r="10" fill="${b}"/><circle cx="72" cy="34" r="10" fill="${b}"/>`;
+ if(ear==="dog")ears=`<ellipse cx="24" cy="52" rx="9" ry="16" fill="${a}"/><ellipse cx="76" cy="52" rx="9" ry="16" fill="${a}"/>`;
+ if(ear==="owl")ears=`<path d="M26 34 L30 18 L40 30Z" fill="${b}"/><path d="M74 34 L70 18 L60 30Z" fill="${b}"/>`;
+ if(ear==="hedgehog")ears=[...Array(9)].map((_,i)=>{const t=Math.PI*(1+i/8);return `<path d="M50 58 L${50+44*Math.cos(t)} ${58+44*Math.sin(t)} L${50+34*Math.cos(t+.18)} ${58+34*Math.sin(t+.18)}Z" fill="${a}"/>`}).join("");
+ let it="";
+ if(item==="scarf")it=`<path d="M26 78 Q50 90 74 78 L74 86 Q50 98 26 86Z" fill="${a}"/><rect x="60" y="84" width="9" height="16" rx="3" fill="${a}"/>`;
+ if(item==="hat")it=`<path d="M30 34 Q50 4 74 26 L80 36 Q50 26 26 38Z" fill="#e2546b"/><circle cx="80" cy="30" r="5" fill="#fff"/><rect x="26" y="32" width="50" height="7" rx="3.5" fill="#fff"/>`;
+ if(item==="star")it=`<path d="M82 12 l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="#f2c35b"/>`;
+ if(item==="bell")it=`<path d="M44 84 Q50 72 56 84Z" fill="#f2c35b"/><circle cx="50" cy="86" r="2" fill="#7a4a1e"/>`;
+ if(item==="mug")it=`<rect x="64" y="72" width="16" height="16" rx="3" fill="#e2546b"/><path d="M80 76 q6 4 0 8" stroke="#e2546b" stroke-width="3" fill="none"/>`;
+ const snout=(ear==="fox"||ear==="dog"||ear==="bear")?`<ellipse cx="50" cy="66" rx="10" ry="7" fill="${ear==="fox"?a:'#fff3e0'}"/>`:"";
+ const beak=ear==="owl"?`<path d="M46 62 L54 62 L50 69Z" fill="#f2c35b"/><circle cx="40" cy="54" r="9" fill="#fff"/><circle cx="60" cy="54" r="9" fill="#fff"/>`:"";
+ return `<svg viewBox="0 0 100 104" aria-hidden="true">${ear==="hedgehog"?ears:""}<ellipse cx="50" cy="96" rx="28" ry="5" fill="rgba(0,0,0,.25)"/>${ear!=="hedgehog"?ears:""}<circle cx="50" cy="60" r="32" fill="${b}"/>${beak}${snout}<circle cx="40" cy="55" r="3.6" fill="#1b2030"/><circle cx="60" cy="55" r="3.6" fill="#1b2030"/><circle cx="41.3" cy="53.6" r="1.2" fill="#fff"/><circle cx="61.3" cy="53.6" r="1.2" fill="#fff"/><ellipse cx="32" cy="66" rx="5" ry="3" fill="#ff9fb0" opacity=".6"/><ellipse cx="68" cy="66" rx="5" ry="3" fill="#ff9fb0" opacity=".6"/><path d="M46 69 q4 4 8 0" stroke="#1b2030" stroke-width="2" fill="none" stroke-linecap="round"/>${it}</svg>`;}
+
+const $=id=>document.getElementById(id);
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2400)}
+const KEY="star-scratch-mock-v1";
+let S={nick:"",grade:"",left:3,dust:120,pity:31,owned:{"귤냥":1,"솜솜":2}};
+try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v)S=Object.assign(S,v)}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+// ── 화면 전환 ──
+const SCREENS=["signup","draw","dex","friends"];
+function show(name){
+ SCREENS.forEach(s=>$("scr-"+s).hidden=s!==name);
+ $("nav").hidden=name==="signup";
+ document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-current",b.dataset.s===name));
+ if(name==="dex")renderDex();
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>show(b.dataset.s));
+
+// ── 가입 ──
+const minor=g=>/초등|중학교 1|중학교 2/.test(g);
+function chk1(){$("su1next").disabled=!($("nick").value.trim()&&$("grade").value)}
+$("nick").oninput=chk1;$("grade").onchange=chk1;
+$("su1next").onclick=()=>{
+ S.nick=$("nick").value.trim();S.grade=$("grade").value;save();
+ if(minor(S.grade)){$("su1").hidden=true;$("su2").hidden=false;$("st2").classList.add("on")}
+ else goRecovery();
+};
+$("pmail").oninput=()=>{$("su2next").disabled=!$("pmail").value.includes("@")};
+$("su2next").onclick=()=>{toast("보호자께 동의 메일을 보냈어요 (목업이라 흉내만 내요)");goRecovery()};
+function goRecovery(){
+ $("su1").hidden=true;$("su2").hidden=true;$("su3").hidden=false;
+ $("st2").classList.add("on");$("st3").classList.add("on");
+ const w=["SNOW","STAR","MOON","BELL"][Math.floor(Math.random()*4)];
+ const r=()=>Math.random().toString(36).slice(2,6).toUpperCase();
+ $("recovery").textContent=`${w}-${r()}-${r()}`;
+}
+$("copyRec").onclick=async()=>{try{await navigator.clipboard.writeText($("recovery").textContent);toast("복사했어요")}catch(e){toast("길게 눌러서 직접 복사해 주세요")}};
+$("su3done").onclick=()=>{save();$("hello").textContent=`${S.nick} · ${S.grade}`;show("draw");render()};
+
+// ── 뽑기 ──
+let busy=false;
+function pickTier(){if(S.pity<=1){const r=Math.random()*12;return r<9?"hero":r<11.5?"legend":"limited"}
+ let r=Math.random()*100;for(const k of Object.keys(TIERS)){if((r-=TIERS[k].p)<0)return k}return"common"}
+function draw(paid){
+ if(busy)return;
+ if(!paid&&S.left<=0){toast("오늘 무료 뽑기는 끝! 내일 또 와요");return}
+ if(paid&&S.dust<100){toast("별가루가 100 필요해요");return}
+ paid?S.dust-=100:S.left--;
+ const tier=pickTier();S.pity=(tier==="common"||tier==="rare")?S.pity-1:31;
+ const pool=CARDS.filter(c=>c[1]===tier);const c=pool[Math.floor(Math.random()*pool.length)];
+ const dup=!!S.owned[c[0]];S.owned[c[0]]=(S.owned[c[0]]||0)+1;
+ if(dup)S.dust+=TIERS[tier].dust;
+ save();reveal(c,dup);render();
+}
+function reveal(c,dup){
+ const t=TIERS[c[1]];const now=new Date();
+ const stamp=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,"0")}.${String(now.getDate()).padStart(2,"0")}`;
+ const slot=$("slot");
+ slot.innerHTML=`<div class="card" style="--c:${t.color}"><div class="art"><span class="tier">${t.label}</span>${art(c)}</div><div class="name">${c[0]}</div><div class="imprint">${stamp} · ${S.nick}의 카드</div></div><canvas class="scratch"></canvas>`;
+ busy=true;$("hint").textContent="은박을 긁어 보세요";
+ const cv=slot.querySelector("canvas"),r=slot.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+ cv.width=r.width*dpr;cv.height=r.height*dpr;
+ const g=cv.getContext("2d");g.scale(dpr,dpr);
+ const grd=g.createLinearGradient(0,0,r.width,r.height);
+ grd.addColorStop(0,"#c9d2e6");grd.addColorStop(.5,"#eef2fb");grd.addColorStop(1,"#a9b5d2");
+ g.fillStyle=grd;g.fillRect(0,0,r.width,r.height);
+ g.fillStyle="#121a33";g.font="20px 'Do Hyeon',sans-serif";g.textAlign="center";
+ g.fillText("여기를 긁어요 ⭐",r.width/2,r.height/2);
+ g.globalCompositeOperation="destination-out";g.lineWidth=32;g.lineCap="round";g.lineJoin="round";
+ let down=false,last=null,done=false;
+ const pos=e=>{const b=cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top]};
+ cv.addEventListener("pointerdown",e=>{down=true;last=pos(e);cv.setPointerCapture(e.pointerId);g.beginPath();g.arc(last[0],last[1],16,0,7);g.fill()});
+ cv.addEventListener("pointermove",e=>{if(!down)return;const p=pos(e);g.beginPath();g.moveTo(...last);g.lineTo(...p);g.stroke();last=p});
+ const up=()=>{down=false;if(done)return;const d=g.getImageData(0,0,cv.width,cv.height).data;let clear=0,n=0;
+  for(let i=3;i<d.length;i+=160){n++;if(d[i]===0)clear++}
+  if(clear/n>.5)fin()};
+ cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
+ cv.tabIndex=0;cv.setAttribute("aria-label","은박. 엔터를 누르면 한 번에 벗겨져요");
+ cv.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fin()}});
+ function fin(){done=true;busy=false;cv.style.transition="opacity .5s";cv.style.opacity=0;setTimeout(()=>cv.remove(),500);
+  $("hint").textContent=dup?`겹친 카드! 별가루 +${t.dust}`:`새 카드! ${t.label} 「${c[0]}」 도감에 추가`}
+}
+$("draw").onclick=()=>draw(false);$("extra").onclick=()=>draw(true);
+function render(){
+ $("left").textContent=S.left;$("dust").textContent=S.dust;$("pity").textContent=S.pity;
+ $("draw").disabled=S.left<=0;$("draw").textContent=S.left>0?"무료로 뽑기":"내일 또 와요";
+ $("extra").disabled=S.dust<100;
+ $("odds").innerHTML=Object.values(TIERS).map(t=>`<tr><td><span class="dot" style="--c:${t.color}"></span>${t.label}</td><td>${t.p}%</td></tr>`).join("");
+ const d=new Date(2026,11,25)-new Date();$("xmasleft").textContent=Math.max(0,Math.ceil(d/864e5))+"일";
+}
+function renderDex(){
+ $("dex").innerHTML=CARDS.map(c=>{const n=S.owned[c[0]]||0,t=TIERS[c[1]];
+  return `<div class="cell ${n?"":"locked"}" style="--c:${t.color}">${art(c)}<span class="n">${n?c[0]:"???"}</span></div>`}).join("");
+ $("dexcount").textContent=`${Object.keys(S.owned).length} / ${CARDS.length} 모았어요`;
+}
+
+// ── 친구 ──
+document.querySelectorAll(".ava").forEach(a=>a.innerHTML=art(CARDS[+a.dataset.char]));
+$("copyCode").onclick=async()=>{try{await navigator.clipboard.writeText("STAR-7F2K");toast("복사했어요")}catch(e){toast("길게 눌러서 복사해 주세요")}};
+$("addfr").onclick=()=>{const v=$("addcode").value.trim();if(!v){toast("코드를 입력해 주세요");return}
+ toast(`${v}님께 친구 요청을 보냈어요 (수락하면 친구가 돼요)`);$("addcode").value=""};
+$("acc1").onclick=()=>{$("req1").innerHTML=`<div class="ava"></div><div class="who"><b>눈덩이굴리기</b><small>방금 친구가 됐어요 🎉</small></div>`;
+ $("req1").querySelector(".ava").innerHTML=art(CARDS[7]);$("frcount").textContent="3 / 50";toast("친구가 됐어요!")};
+$("dec1").onclick=()=>{$("req1").remove();toast("요청을 거절했어요")};
+document.querySelectorAll(".gift").forEach(b=>b.onclick=()=>toast("선물할 카드 고르기 화면이 열려요 (목업)"));
+document.querySelectorAll(".block").forEach(b=>b.onclick=()=>toast("차단하면 서로 보이지 않아요 (목업이라 흉내만)"));
+
+// 카톡 인앱 브라우저 감지
+if(/KAKAOTALK/i.test(navigator.userAgent)){
+ SCREENS.push("kakao");show("kakao");
+ document.getElementById("kakaoCopy").onclick=async()=>{try{await navigator.clipboard.writeText(location.href);toast("복사했어요. 다른 브라우저에 붙여 넣으세요")}catch(e){toast("주소창을 길게 눌러 복사해 주세요")}};
+ document.getElementById("kakaoGo").onclick=()=>{S.nick?show("draw"):show("signup")};
+}
+// 시작
+if(S.nick){$("hello").textContent=`${S.nick} · ${S.grade}`;show("draw")}else show("signup");
+render();
+</script>
