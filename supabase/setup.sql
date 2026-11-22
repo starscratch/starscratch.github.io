@@ -277,3 +277,43 @@ insert into public.card_catalog (card_key,tier,cond_weather,cond_time,cond_regio
  ('눈사람의 혼','rare','눈','night',null,true),
  ('아침의 유령','hero',null,'morning',null,true)
 on conflict (card_key) do nothing;
+
+-- ── 카드 합성 (비밀 조합식) ──
+create table if not exists public.fusion_recipes (
+  key_a text not null,
+  key_b text not null,
+  result text not null,
+  primary key (key_a, key_b)
+);
+insert into public.fusion_recipes (key_a,key_b,result) values
+ ('솜솜','뭉치','눈사람의 혼'),
+ ('코코','반짝','아침의 유령'),
+ ('귤냥','초록','호호')
+on conflict do nothing;
+alter table public.fusion_recipes enable row level security;
+-- 조합식은 비밀이라 아무도 직접 못 읽음 (RPC로만 시도)
+
+create or replace function public.fuse_cards(p_key_a text, p_key_b text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); v_result text; v_tier text; id_a bigint; id_b bigint;
+begin
+  if me is null then raise exception 'not signed in'; end if;
+  select result into v_result from fusion_recipes
+   where (key_a=p_key_a and key_b=p_key_b) or (key_a=p_key_b and key_b=p_key_a);
+  if v_result is null then return jsonb_build_object('error','no_recipe'); end if;
+  select id into id_a from cards where owner=me and card_key=p_key_a limit 1;
+  select id into id_b from cards where owner=me and card_key=p_key_b and id is distinct from id_a limit 1;
+  if id_a is null or id_b is null then return jsonb_build_object('error','missing'); end if;
+  delete from cards where id in (id_a,id_b);
+  select tier into v_tier from card_catalog where card_key=v_result;
+  insert into cards (owner,card_key,tier) values (me,v_result,coalesce(v_tier,'rare'));
+  return jsonb_build_object('ok',true,'result',v_result,'tier',coalesce(v_tier,'rare'));
+end $$;
+revoke all on function public.fuse_cards(text,text) from anon;
+
+-- ── 크리스마스 한정 카드 (12월 동안만) ──
+insert into public.card_catalog (card_key,tier,cond_weather,cond_time,cond_region,hidden) values
+ ('루돌프 뭉치','rare',null,null,null,false),
+ ('산타 귤냥','hero',null,null,null,false),
+ ('크리스마스 트리별','legend',null,'night',null,false)
+on conflict (card_key) do nothing;

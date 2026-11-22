@@ -180,6 +180,12 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem;color:var(--nav
     <header><h1>도감</h1><p class="sub" id="dexcount"></p></header>
     <div class="dex" id="dex"></div>
     <p class="note">??? 칸은 아직 못 만난 카드예요. 숨겨진 카드는 조건을 채워야만 나와요.</p>
+    <div class="panel">
+      <h2>카드 합성</h2>
+      <p class="note">어떤 카드 둘을 합치면 숨겨진 카드가 나와요. 조합식은 비밀! 합치면 재료 카드는 사라져요.</p>
+      <div style="display:flex;gap:8px"><select id="fuseA" style="flex:1"></select><select id="fuseB" style="flex:1"></select></div>
+      <button class="small" id="doFuse">합성해 보기</button>
+    </div>
   </div>
 
   <!-- ███ 친구 ███ -->
@@ -227,7 +233,7 @@ let sb=null;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){}
 const needSb=()=>{if(!sb){alert_off=1;throw new Error("offline")}};
 
 const TIERS={common:{label:"일반",p:60,dust:5,color:"var(--r-common)"},rare:{label:"희귀",p:28,dust:20,color:"var(--r-rare)"},hero:{label:"영웅",p:9,dust:60,color:"var(--r-hero)"},legend:{label:"전설",p:2.5,dust:150,color:"var(--r-legend)"},limited:{label:"한정",p:0.5,dust:200,color:"var(--r-limited)"}};
-const CARDS=[["솜솜","common","#f4f6ff","#9fb0d6","bunny","scarf"],["귤냥","common","#ffb15c","#e2546b","cat","none"],["뭉치","common","#ffffff","#3fae8a","round","hat"],["도리","common","#3a4466","#ffd36b","round","scarf"],["붕이","common","#d99a4e","#7a4a1e","bear","none"],["코코","common","#8a5a3c","#f4f6ff","dog","mug"],["반짝","rare","#c9874b","#f2c35b","squirrel","star"],["호호","rare","#ff8a4c","#fff1c9","fox","none"],["딩동","rare","#7c6aa8","#f2c35b","owl","bell"],["초록","rare","#3fae8a","#f2c35b","round","star"],["따끔","hero","#6b4a3a","#e2546b","hedgehog","hat"],["설탕별","hero","#b98cff","#ffffff","bunny","star"],["오로라","hero","#5fb6ff","#b98cff","cat","scarf"],["겨울왕고래","legend","#2e5fa8","#9fe3ff","round","star"],["첫눈 요정","legend","#eef2fb","#f2c35b","bunny","bell"],["성탄밤","limited","#e2546b","#f2c35b","owl","hat"],["눈사람의 혼","rare","#eef2fb","#5fb6ff","round","scarf",1],["아침의 유령","hero","#f4f6ff","#b98cff","bunny","none",1]];
+const CARDS=[["솜솜","common","#f4f6ff","#9fb0d6","bunny","scarf"],["귤냥","common","#ffb15c","#e2546b","cat","none"],["뭉치","common","#ffffff","#3fae8a","round","hat"],["도리","common","#3a4466","#ffd36b","round","scarf"],["붕이","common","#d99a4e","#7a4a1e","bear","none"],["코코","common","#8a5a3c","#f4f6ff","dog","mug"],["반짝","rare","#c9874b","#f2c35b","squirrel","star"],["호호","rare","#ff8a4c","#fff1c9","fox","none"],["딩동","rare","#7c6aa8","#f2c35b","owl","bell"],["초록","rare","#3fae8a","#f2c35b","round","star"],["따끔","hero","#6b4a3a","#e2546b","hedgehog","hat"],["설탕별","hero","#b98cff","#ffffff","bunny","star"],["오로라","hero","#5fb6ff","#b98cff","cat","scarf"],["겨울왕고래","legend","#2e5fa8","#9fe3ff","round","star"],["첫눈 요정","legend","#eef2fb","#f2c35b","bunny","bell"],["성탄밤","limited","#e2546b","#f2c35b","owl","hat"],["눈사람의 혼","rare","#eef2fb","#5fb6ff","round","scarf",1],["아침의 유령","hero","#f4f6ff","#b98cff","bunny","none",1],["루돌프 뭉치","rare","#d99a4e","#e2546b","bear","none"],["산타 귤냥","hero","#ffb15c","#e2546b","cat","hat"],["크리스마스 트리별","legend","#3fae8a","#f2c35b","round","star"]];
 function art(c){const[,,b,a,ear,item]=c;let ears="";
  if(ear==="bunny")ears=`<ellipse cx="38" cy="22" rx="8" ry="20" fill="${b}"/><ellipse cx="62" cy="22" rx="8" ry="20" fill="${b}"/>`;
  if(ear==="cat"||ear==="fox")ears=`<path d="M24 40 L30 14 L44 32Z" fill="${b}"/><path d="M76 40 L70 14 L56 32Z" fill="${b}"/>`;
@@ -300,7 +306,7 @@ function show(name){
  SCREENS.forEach(s=>$("scr-"+s).hidden=s!==name);
  $("nav").hidden=name==="signup";
  document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-current",b.dataset.s===name));
- if(name==="dex")renderDex();
+ if(name==="dex"){renderDex();fillFuse()}
  if(name==="friends")loadFriends();
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>show(b.dataset.s));
@@ -421,6 +427,23 @@ function render(){
  $("odds").innerHTML=Object.values(TIERS).map(t=>`<tr><td><span class="dot" style="--c:${t.color}"></span>${t.label}</td><td>${t.p}%</td></tr>`).join("");
  const d=new Date(2026,11,25)-new Date();$("xmasleft").textContent=Math.max(0,Math.ceil(d/864e5))+"일";
 }
+function fillFuse(){
+ const opts=Object.keys(OWNED).filter(k=>OWNED[k]>0).map(k=>`<option>${k}</option>`).join("");
+ $("fuseA").innerHTML=opts;$("fuseB").innerHTML=opts;
+}
+$("doFuse").onclick=async()=>{
+ const a=$("fuseA").value,b=$("fuseB").value;
+ if(!a||!b){toast("카드 두 장을 골라 주세요");return}
+ if(a===b&&(OWNED[a]||0)<2){toast("같은 카드로 합치려면 2장이 필요해요");return}
+ $("doFuse").disabled=true;
+ const {data,error}=await sb.rpc("fuse_cards",{p_key_a:a,p_key_b:b});
+ $("doFuse").disabled=false;
+ if(error){toast("합성에 실패했어요");return}
+ if(data.error==="no_recipe"){toast("이 조합은 아무 일도 일어나지 않았어요…");return}
+ if(data.error==="missing"){toast("재료 카드가 부족해요");return}
+ OWNED[a]--;OWNED[b]--;OWNED[data.result]=(OWNED[data.result]||0)+1;
+ toast(`합성 성공! 「${data.result}」 카드가 나왔어요`);renderDex();
+};
 function renderDex(){
  $("dex").innerHTML=CARDS.map(c=>{const n=S.owned[c[0]]||0,t=TIERS[c[1]],hid=c[6]&&!n;
   return `<div class="cell ${n?"":"locked"}" style="--c:${t.color}">${hid?'<span style="font-family:var(--display);font-size:1.6rem;color:var(--muted)">?</span>':art(c)}<span class="n">${n?c[0]:hid?"숨겨진 카드":"???"}</span></div>`}).join("");
