@@ -4,83 +4,87 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: phone app mockup — 4 screens behind a bottom tab bar; signup flow first. Winter-night single theme shared with the prototype. */
+/* 밝은 겨울 아침 테마: 눈 흰색 바탕, 남색 글자, 금색 포인트 */
 :root{
-  --night:#121a33; --night2:#1b2648; --snow:#eef2fb; --frost:#9fb0d6;
-  --gold:#f2c35b; --berry:#e2546b; --pine:#3fae8a;
-  --r-common:#9fb0d6; --r-rare:#5fb6ff; --r-hero:#b98cff; --r-legend:#f2c35b; --r-limited:#ff7a93;
+  --bg:#f5f8fe; --panel:#ffffff; --ink:#1d2a4d; --muted:#67739a;
+  --line:#dfe6f5; --gold:#e8a816; --gold-soft:#fff3d6; --berry:#e2546b; --navy:#223059;
+  --r-common:#8d9bbf; --r-rare:#3d9bec; --r-hero:#9b6fe8; --r-legend:#e8a816; --r-limited:#f05a7e;
   --display:"Do Hyeon","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,monospace;
-  color-scheme:dark;
+  color-scheme:light;
 }
 html,body{height:100%}
-html{background:var(--night)}
-body{background:radial-gradient(120% 60% at 50% 0%,var(--night2),var(--night) 70%);color:var(--snow);font-family:var(--body);margin:0;
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);margin:0;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 0;box-sizing:border-box}
 .app{max-width:440px;margin:0 auto;height:100%;display:flex;flex-direction:column}
 .screen{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding-bottom:16px}
-h1{font-family:var(--display);font-weight:400;font-size:1.9rem;margin:0}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{width:40px;height:40px;border-radius:10px}
+h1{font-family:var(--display);font-weight:400;font-size:1.8rem;margin:0;color:var(--navy)}
 h1 span{color:var(--gold)}
-h2{font-family:var(--display);font-weight:400;font-size:1.3rem;margin:0}
-.sub{color:var(--frost);margin:2px 0 0;font-size:.9rem}
-.panel{background:rgba(255,255,255,.05);border:1px solid rgba(159,176,214,.18);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
-label{font-size:.85rem;color:var(--frost)}
-input,select{font:inherit;background:var(--night2);color:var(--snow);border:1px solid rgba(159,176,214,.3);border-radius:10px;padding:11px 12px;width:100%;box-sizing:border-box}
-button{font:inherit;font-family:var(--display);font-size:1.1rem;border:0;border-radius:12px;padding:12px 20px;cursor:pointer;background:var(--berry);color:#fff}
-button.alt{background:transparent;color:var(--gold);border:1px solid var(--gold);font-size:.95rem}
+h2{font-family:var(--display);font-weight:400;font-size:1.25rem;margin:0;color:var(--navy)}
+.sub{color:var(--muted);margin:2px 0 0;font-size:.9rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px rgba(29,42,77,.06)}
+label{font-size:.85rem;color:var(--muted)}
+input,select{font:inherit;background:#fff;color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;box-sizing:border-box}
+button{font:inherit;font-family:var(--display);font-size:1.1rem;border:0;border-radius:12px;padding:12px 20px;cursor:pointer;background:var(--navy);color:#fff}
+button.alt{background:#fff;color:var(--navy);border:1.5px solid var(--line);font-size:.95rem}
 button.small{font-size:.9rem;padding:7px 14px}
-button:disabled{opacity:.4;cursor:not-allowed}
+button:disabled{opacity:.45;cursor:not-allowed}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.note{font-size:.8rem;color:var(--frost);line-height:1.6;margin:0}
-.code{font-family:var(--mono);background:var(--night2);border:1px dashed rgba(159,176,214,.4);border-radius:10px;padding:12px;text-align:center;font-size:1.15rem;letter-spacing:.12em}
+.note{font-size:.8rem;color:var(--muted);line-height:1.6;margin:0}
+.code{font-family:var(--mono);background:var(--gold-soft);border:1.5px dashed var(--gold);border-radius:10px;padding:12px;text-align:center;font-size:1.15rem;letter-spacing:.12em;color:var(--navy)}
 .status{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:rgba(255,255,255,.05);border:1px solid rgba(159,176,214,.18);border-radius:12px;padding:9px 11px;min-width:0}
-.stat b{display:block;font-family:var(--mono);font-size:1.05rem;font-variant-numeric:tabular-nums}
-.stat small{color:var(--frost);font-size:.72rem}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 11px;min-width:0}
+.stat b{display:block;font-family:var(--mono);font-size:1.05rem;font-variant-numeric:tabular-nums;color:var(--navy)}
+.stat small{color:var(--muted);font-size:.72rem}
+.ctx select{width:auto}
 .stage{display:flex;flex-direction:column;align-items:center;gap:12px}
 .slot{position:relative;width:min(230px,62vw);aspect-ratio:5/7;max-width:100%}
-.card{position:absolute;inset:0;border-radius:16px;overflow:hidden;background:var(--night2);border:3px solid var(--c,var(--r-common));display:flex;flex-direction:column;box-shadow:0 14px 34px rgba(0,0,0,.45)}
+.card{position:absolute;inset:0;border-radius:16px;overflow:hidden;background:linear-gradient(160deg,#eaf1ff,#dce7fb);border:3px solid var(--c,var(--r-common));display:flex;flex-direction:column;box-shadow:0 10px 28px rgba(29,42,77,.18)}
 .card .art{flex:1;display:grid;place-items:center;position:relative}
 .card .art svg{width:76%;height:auto}
-.card .tier{position:absolute;top:9px;left:9px;font-family:var(--display);font-size:.9rem;padding:2px 9px;border-radius:99px;background:var(--c);color:var(--night)}
-.card .name{font-family:var(--display);font-size:1.35rem;text-align:center}
-.card .imprint{font-family:var(--mono);font-size:.62rem;color:var(--frost);border-top:1px dashed rgba(159,176,214,.3);margin:7px 11px 0;padding:7px 0 10px;line-height:1.5;text-align:center}
+.card .tier{position:absolute;top:9px;left:9px;font-family:var(--display);font-size:.9rem;padding:2px 9px;border-radius:99px;background:var(--c);color:#fff}
+.card .name{font-family:var(--display);font-size:1.35rem;text-align:center;color:var(--navy)}
+.card .imprint{font-family:var(--mono);font-size:.62rem;color:var(--muted);border-top:1px dashed var(--line);margin:7px 11px 0;padding:7px 0 10px;line-height:1.5;text-align:center}
 canvas.scratch{position:absolute;inset:0;width:100%;height:100%;border-radius:16px;touch-action:none}
-.empty{position:absolute;inset:0;border-radius:16px;border:2px dashed rgba(159,176,214,.35);display:grid;place-items:center;text-align:center;color:var(--frost);padding:16px;font-size:.9rem}
-.hint{min-height:1.3em;color:var(--frost);font-size:.88rem;text-align:center}
+.empty{position:absolute;inset:0;border-radius:16px;border:2px dashed var(--line);background:var(--panel);display:grid;place-items:center;text-align:center;color:var(--muted);padding:16px;font-size:.9rem}
+.hint{min-height:1.3em;color:var(--muted);font-size:.88rem;text-align:center}
 .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btns button:first-child{background:var(--berry)}
 .dex{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.cell{aspect-ratio:5/7;border-radius:10px;border:2px solid var(--c);background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;position:relative;min-width:0}
+.cell{aspect-ratio:5/7;border-radius:10px;border:2px solid var(--c);background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;position:relative;min-width:0}
 .cell svg{width:78%}
-.cell .n{font-size:.66rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.cell.locked{border-color:rgba(159,176,214,.18)}
-.cell.locked svg{filter:brightness(0) opacity(.35)}
-.friend{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(159,176,214,.12)}
+.cell .n{font-size:.66rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--ink)}
+.cell.locked{border-color:var(--line);background:#eef2fa}
+.cell.locked svg{filter:brightness(0) opacity(.18)}
+.cell.locked .n{color:var(--muted)}
+.friend{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
 .friend:last-child{border-bottom:0}
-.ava{width:40px;height:40px;border-radius:50%;background:var(--night2);display:grid;place-items:center;flex-shrink:0}
-.ava svg{width:30px}
-.ava{font-size:20px}
+.ava{width:40px;height:40px;border-radius:50%;background:var(--gold-soft);display:grid;place-items:center;flex-shrink:0}
+.ava svg{width:24px;height:24px}
 .friend .who{flex:1;min-width:0}
-.friend .who b{display:block;font-size:.95rem}
-.friend .who small{color:var(--frost);font-size:.75rem}
-.tag{font-size:.7rem;padding:2px 8px;border-radius:99px;background:var(--night2);color:var(--frost);border:1px solid rgba(159,176,214,.3)}
-nav{display:flex;border-top:1px solid rgba(159,176,214,.2);background:var(--night);position:sticky;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px)}
-nav button{flex:1;background:none;border:0;border-radius:0;color:var(--frost);font-family:var(--display);font-size:.95rem;padding:11px 0 13px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.friend .who b{display:block;font-size:.95rem;color:var(--ink)}
+.friend .who small{color:var(--muted);font-size:.75rem}
+.tag{font-size:.7rem;padding:2px 8px;border-radius:99px;background:var(--gold-soft);color:var(--navy);border:1px solid var(--gold)}
+nav{display:flex;border-top:1px solid var(--line);background:var(--panel);position:sticky;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;border:0;border-radius:0;color:var(--muted);font-family:var(--display);font-size:.9rem;padding:9px 0 11px;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button svg{width:22px;height:22px}
 nav button[aria-current="true"]{color:var(--gold)}
-nav button .ic{font-size:1.25rem;line-height:1}
-.toast{position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--snow);color:var(--night);padding:10px 16px;border-radius:10px;font-size:.88rem;max-width:calc(100% - 32px);z-index:5}
-.banner{background:linear-gradient(100deg,#2a1e3f,#3b2246);border:1px solid var(--r-hero);border-radius:12px;padding:12px 14px;font-size:.88rem}
+.toast{position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;font-size:.88rem;max-width:calc(100% - 32px);z-index:5}
+.banner{background:var(--gold-soft);border:1px solid var(--gold);border-radius:12px;padding:12px 14px;font-size:.88rem;color:var(--navy)}
 .banner b{color:var(--gold)}
 .steps{display:flex;gap:6px;justify-content:center}
-.steps i{width:8px;height:8px;border-radius:50%;background:rgba(159,176,214,.3)}
+.steps i{width:8px;height:8px;border-radius:50%;background:var(--line)}
 .steps i.on{background:var(--gold)}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
-td{padding:5px 0;border-bottom:1px solid rgba(159,176,214,.12)}
+td{padding:5px 0;border-bottom:1px solid var(--line)}
 td:last-child{text-align:right;font-family:var(--mono)}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--c)}
-details{background:rgba(255,255,255,.04);border:1px solid rgba(159,176,214,.18);border-radius:12px;padding:10px 14px}
-summary{cursor:pointer;font-family:var(--display);font-size:1rem}
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+summary{cursor:pointer;font-family:var(--display);font-size:1rem;color:var(--navy)}
 [hidden]{display:none!important}
 </style>
 
@@ -96,7 +100,7 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem}
   <!-- ███ 가입 ███ -->
   <div class="screen" id="scr-signup">
     <header style="text-align:center;padding-top:20px">
-      <h1>⭐ 스타 <span>스크래치</span></h1>
+      <img src="assets/icon.svg" alt="" style="width:72px;height:72px;border-radius:18px;margin:0 auto 10px;display:block"><h1>스타 <span>스크래치</span></h1>
       <p class="sub">긁을수록 빛나는 나만의 카드</p>
     </header>
     <div class="steps"><i class="on" id="st1"></i><i id="st2"></i><i id="st3"></i></div>
@@ -143,8 +147,8 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem}
 
   <!-- ███ 뽑기 ███ -->
   <div class="screen" id="scr-draw" hidden>
-    <header><h1>오늘의 <span>뽑기</span></h1><p class="sub" id="hello"></p></header>
-    <div class="banner">🎄 <b>크리스마스 팩 진행 중!</b> 25일까지 성탄 카드가 나와요. 남은 기간 <b id="xmasleft">3일</b></div>
+    <header class="brand"><img src="assets/icon.svg" alt="스타 스크래치"><div><h1>오늘의 <span>뽑기</span></h1><p class="sub" id="hello"></p></div></header>
+    <div class="banner"><b>크리스마스 팩 진행 중!</b> 25일까지 성탄 카드가 나와요. 남은 기간 <b id="xmasleft">3일</b></div>
     <div class="ctx" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.85rem;color:var(--frost)">
       <label for="region">지역</label>
       <select id="region" style="width:auto"><option>서울</option><option>부산</option><option>제주</option><option>대구</option><option>광주</option><option>강원</option></select>
@@ -205,9 +209,9 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem}
   </div>
 
   <nav id="nav" hidden>
-    <button data-s="draw" aria-current="true"><span class="ic">🎴</span>뽑기</button>
-    <button data-s="dex"><span class="ic">📖</span>도감</button>
-    <button data-s="friends"><span class="ic">👥</span>친구</button>
+    <button data-s="draw" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6"/></svg>뽑기</button>
+    <button data-s="dex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M12 3v18"/></svg>도감</button>
+    <button data-s="friends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.6c2.9.4 5 2.7 5 5.4"/></svg>친구</button>
   </nav>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -365,7 +369,7 @@ function reveal(c,dup,gain){
  grd.addColorStop(0,"#c9d2e6");grd.addColorStop(.5,"#eef2fb");grd.addColorStop(1,"#a9b5d2");
  g.fillStyle=grd;g.fillRect(0,0,r.width,r.height);
  g.fillStyle="#121a33";g.font="20px 'Do Hyeon',sans-serif";g.textAlign="center";
- g.fillText("여기를 긁어요 ⭐",r.width/2,r.height/2);
+ g.fillText("여기를 긁어요",r.width/2,r.height/2);
  g.globalCompositeOperation="destination-out";g.lineWidth=32;g.lineCap="round";g.lineJoin="round";
  let down=false,last=null,done=false;
  const pos=e=>{const b=cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top]};
@@ -404,12 +408,12 @@ async function loadFriends(){
   const fr=data.friends||[],pin=data.pending_in||[];
   $("frcount").textContent=`${fr.length} / 50`;
   $("frlist").innerHTML=fr.length?fr.map(f=>
-   `<div class="friend"><div class="ava">⭐</div><div class="who"><b>${esc(f.nick)}</b><small>${esc(f.code)}</small></div>
+   `<div class="friend"><div class="ava"><svg viewBox="0 0 24 24"><path d="M12 2l2.6 6.2 6.7.5-5.1 4.4 1.6 6.6L12 16l-5.8 3.7 1.6-6.6-5.1-4.4 6.7-.5z" fill="#e8a816"/></svg></div><div class="who"><b>${esc(f.nick)}</b><small>${esc(f.code)}</small></div>
     <button class="small gift" data-code="${esc(f.code)}">선물</button></div>`).join("")
    :'<p class="note">아직 친구가 없어요. 내 코드를 친구한테 보내 보세요!</p>';
   $("reqPanel").hidden=!pin.length;
   $("reqlist").innerHTML=pin.map(q=>
-   `<div class="friend"><div class="ava">⭐</div><div class="who"><b>${esc(q.nick)}</b><small>친구 요청</small></div>
+   `<div class="friend"><div class="ava"><svg viewBox="0 0 24 24"><path d="M12 2l2.6 6.2 6.7.5-5.1 4.4 1.6 6.6L12 16l-5.8 3.7 1.6-6.6-5.1-4.4 6.7-.5z" fill="#e8a816"/></svg></div><div class="who"><b>${esc(q.nick)}</b><small>친구 요청</small></div>
     <button class="small acc" data-id="${q.from_id}">수락</button><button class="alt small dec" data-id="${q.from_id}">거절</button></div>`).join("");
   document.querySelectorAll(".acc").forEach(b=>b.onclick=()=>respond(b.dataset.id,true));
   document.querySelectorAll(".dec").forEach(b=>b.onclick=()=>respond(b.dataset.id,false));
@@ -437,7 +441,7 @@ async function gift(code){
  const {data:rows}=await sb.from("cards").select("id").eq("card_key",key).limit(1);
  if(!rows||!rows.length)return;
  const {data}=await sb.rpc("gift_card",{p_card_id:rows[0].id,p_code:code});
- if(data&&data.ok){OWNED[key]--;toast("선물을 보냈어요! 🎁");renderDex()}
+ if(data&&data.ok){OWNED[key]--;toast("선물을 보냈어요!");renderDex()}
  else toast("선물을 보내지 못했어요");
 }
 $("doReport").onclick=async()=>{
