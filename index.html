@@ -60,6 +60,7 @@ canvas.scratch{position:absolute;inset:0;width:100%;height:100%;border-radius:16
 .friend:last-child{border-bottom:0}
 .ava{width:40px;height:40px;border-radius:50%;background:var(--night2);display:grid;place-items:center;flex-shrink:0}
 .ava svg{width:30px}
+.ava{font-size:20px}
 .friend .who{flex:1;min-width:0}
 .friend .who b{display:block;font-size:.95rem}
 .friend .who small{color:var(--frost);font-size:.75rem}
@@ -144,6 +145,12 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem}
   <div class="screen" id="scr-draw" hidden>
     <header><h1>오늘의 <span>뽑기</span></h1><p class="sub" id="hello"></p></header>
     <div class="banner">🎄 <b>크리스마스 팩 진행 중!</b> 25일까지 성탄 카드가 나와요. 남은 기간 <b id="xmasleft">3일</b></div>
+    <div class="ctx" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.85rem;color:var(--frost)">
+      <label for="region">지역</label>
+      <select id="region" style="width:auto"><option>서울</option><option>부산</option><option>제주</option><option>대구</option><option>광주</option><option>강원</option></select>
+      <label for="weather">오늘 날씨</label>
+      <select id="weather" style="width:auto"><option>맑음</option><option>눈</option><option>비</option><option>흐림</option></select>
+    </div>
     <div class="status">
       <div class="stat"><small>오늘 남은 뽑기</small><b id="left">3</b></div>
       <div class="stat"><small>별가루</small><b id="dust">120</b></div>
@@ -170,7 +177,7 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem}
 
   <!-- ███ 친구 ███ -->
   <div class="screen" id="scr-friends" hidden>
-    <header><h1>친구</h1><p class="sub">친구 코드로만 추가할 수 있어요 (최대 50명) · 아래 목록은 예시이고, 진짜 친구 기능은 곧 열려요</p></header>
+    <header><h1>친구</h1><p class="sub">친구 코드로만 추가할 수 있어요 (최대 50명)</p></header>
     <div class="panel">
       <label>내 친구 코드</label>
       <div class="code" id="mycode">·····</div>
@@ -181,21 +188,19 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem}
       <div style="display:flex;gap:8px"><input id="addcode" placeholder="STAR-····" style="flex:1"><button class="small" id="addfr">요청</button></div>
       <p class="note">상대가 수락해야 친구가 돼요. 모르는 사람 코드는 넣지 마세요.</p>
     </div>
-    <div class="panel">
+    <div class="panel" id="reqPanel" hidden>
       <h2>받은 요청</h2>
-      <div class="friend" id="req1">
-        <div class="ava" data-char="7"></div>
-        <div class="who"><b>눈덩이굴리기</b><small>중2 · 공통 친구 1명</small></div>
-        <button class="small" id="acc1">수락</button>
-        <button class="alt small" id="dec1">거절</button>
-      </div>
+      <div id="reqlist"></div>
     </div>
     <div class="panel">
-      <h2>내 친구 <span class="tag" id="frcount">2 / 50</span></h2>
-      <div id="frlist">
-        <div class="friend"><div class="ava" data-char="1"></div><div class="who"><b>귤좋아</b><small>어제 전설 카드를 뽑았어요!</small></div><button class="small gift">선물</button><button class="alt small block">차단</button></div>
-        <div class="friend"><div class="ava" data-char="12"></div><div class="who"><b>얼음별</b><small>도감 24장 모음</small></div><button class="small gift">선물</button><button class="alt small block">차단</button></div>
-      </div>
+      <h2>내 친구 <span class="tag" id="frcount">0 / 50</span></h2>
+      <div id="frlist"><p class="note" id="frEmpty">아직 친구가 없어요. 내 코드를 친구한테 보내 보세요!</p></div>
+    </div>
+    <div class="panel">
+      <h2>신고 · 차단</h2>
+      <div style="display:flex;gap:8px"><input id="repcode" placeholder="상대 친구 코드" style="flex:1"></div>
+      <div style="display:flex;gap:8px"><button class="alt small" id="doReport">신고하기</button><button class="alt small" id="doBlock">차단하기</button></div>
+      <p class="note">신고하면 운영자가 확인해요. 차단하면 서로 요청을 보낼 수 없어요.</p>
     </div>
   </div>
 
@@ -266,6 +271,7 @@ function show(name){
  $("nav").hidden=name==="signup";
  document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-current",b.dataset.s===name));
  if(name==="dex")renderDex();
+ if(name==="friends")loadFriends();
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>show(b.dataset.s));
 
@@ -274,8 +280,11 @@ const minor=g=>/초등|중학교 1|중학교 2/.test(g);
 function chk1(){$("su1next").disabled=!($("nick").value.trim()&&$("grade").value)}
 $("nick").oninput=chk1;$("grade").onchange=chk1;
 let pend={nick:"",grade:"",guardian:null};
+const BAD=["시발","씨발","개새","병신","존나","느금","니미","좆","섹스","자지","보지","멍청이","바보새끼"];
+const badNick=n=>BAD.some(w=>n.replace(/\s/g,"").includes(w));
 $("su1next").onclick=()=>{
- pend.nick=$("nick").value.trim();pend.grade=$("grade").value;
+ pend.nick=$("nick").value.trim();
+ if(badNick(pend.nick)){toast("그 닉네임은 쓸 수 없어요. 다른 걸 골라 주세요");return}pend.grade=$("grade").value;
  if(minor(pend.grade)){$("su1").hidden=true;$("su2").hidden=false;$("st2").classList.add("on")}
  else goRecovery();
 };
@@ -330,23 +339,20 @@ let busy=false;
 function pickTier(){if(S.pity<=1){const r=Math.random()*12;return r<9?"hero":r<11.5?"legend":"limited"}
  let r=Math.random()*100;for(const k of Object.keys(TIERS)){if((r-=TIERS[k].p)<0)return k}return"common"}
 async function draw(paid){
- if(busy||!P)return;
- if(!paid&&S.left<=0){toast("오늘 무료 뽑기는 끝! 내일 또 와요");return}
- if(paid&&P.dust<100){toast("별가루가 100 필요해요");return}
- const tier=pickTier();
- const pool=CARDS.filter(c=>c[1]===tier);const c=pool[Math.floor(Math.random()*pool.length)];
- const dup=!!OWNED[c[0]];
- const upd={pity:(tier==="common"||tier==="rare")?P.pity-1:31};
- if(paid)upd.dust=P.dust-100;else upd.draws_today=P.draws_today+1;
- if(dup)upd.dust=(upd.dust??P.dust)+TIERS[tier].dust;
- const {error:e1}=await sb.from("cards").insert({owner:P.id,card_key:c[0],tier});
- if(e1){toast("저장에 실패했어요. 인터넷을 확인해 주세요");return}
- const {data:q,error:e2}=await sb.from("profiles").update(upd).eq("id",P.id).select().single();
- if(q)P=q;else if(e2){toast("저장에 실패했어요");return}
- OWNED[c[0]]=(OWNED[c[0]]||0)+1;
- reveal(c,dup);render();
+ if(busy||!P||!sb)return;
+ busy=true;
+ try{
+  const {data,error}=await sb.rpc("draw_card",{p_paid:paid,p_region:$("region").value,p_weather:$("weather").value});
+  if(error)throw error;
+  if(data.error==="no_draws"){toast("오늘 무료 뽑기는 끝! 내일 또 와요");busy=false;return}
+  if(data.error==="no_dust"){toast("별가루가 100 필요해요");busy=false;return}
+  P.dust=data.dust;P.pity=data.pity;P.draws_today=3-data.draws_left;
+  OWNED[data.card_key]=(OWNED[data.card_key]||0)+1;
+  const c=CARDS.find(x=>x[0]===data.card_key)||[data.card_key,data.tier,"#9fb0d6","#f2c35b","round","star"];
+  busy=false;reveal(c,data.dup,data.dust_gain);render();
+ }catch(e){busy=false;toast("뽑기에 실패했어요. 인터넷을 확인해 주세요")}
 }
-function reveal(c,dup){
+function reveal(c,dup,gain){
  const t=TIERS[c[1]];const now=new Date();
  const stamp=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,"0")}.${String(now.getDate()).padStart(2,"0")}`;
  const slot=$("slot");
@@ -372,7 +378,7 @@ function reveal(c,dup){
  cv.tabIndex=0;cv.setAttribute("aria-label","은박. 엔터를 누르면 한 번에 벗겨져요");
  cv.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fin()}});
  function fin(){done=true;busy=false;cv.style.transition="opacity .5s";cv.style.opacity=0;setTimeout(()=>cv.remove(),500);
-  $("hint").textContent=dup?`겹친 카드! 별가루 +${t.dust}`:`새 카드! ${t.label} 「${c[0]}」 도감에 추가`}
+  $("hint").textContent=dup?`겹친 카드! 별가루 +${gain}`:`새 카드! ${t.label} 「${c[0]}」 도감에 추가`}
 }
 $("draw").onclick=()=>draw(false);$("extra").onclick=()=>draw(true);
 function render(){
@@ -389,15 +395,62 @@ function renderDex(){
 }
 
 // ── 친구 ──
-document.querySelectorAll(".ava").forEach(a=>a.innerHTML=art(CARDS[+a.dataset.char]));
 $("copyCode").onclick=async()=>{try{await navigator.clipboard.writeText($("mycode").textContent);toast("복사했어요")}catch(e){toast("길게 눌러서 복사해 주세요")}};
-$("addfr").onclick=()=>{const v=$("addcode").value.trim();if(!v){toast("코드를 입력해 주세요");return}
- toast(`${v}님께 친구 요청을 보냈어요 (수락하면 친구가 돼요)`);$("addcode").value=""};
-$("acc1").onclick=()=>{$("req1").innerHTML=`<div class="ava"></div><div class="who"><b>눈덩이굴리기</b><small>방금 친구가 됐어요 🎉</small></div>`;
- $("req1").querySelector(".ava").innerHTML=art(CARDS[7]);$("frcount").textContent="3 / 50";toast("친구가 됐어요!")};
-$("dec1").onclick=()=>{$("req1").remove();toast("요청을 거절했어요")};
-document.querySelectorAll(".gift").forEach(b=>b.onclick=()=>toast("선물할 카드 고르기 화면이 열려요 (목업)"));
-document.querySelectorAll(".block").forEach(b=>b.onclick=()=>toast("차단하면 서로 보이지 않아요 (목업이라 흉내만)"));
+async function loadFriends(){
+ if(!sb||!P)return;
+ try{
+  const {data,error}=await sb.rpc("my_relations");
+  if(error)throw error;
+  const fr=data.friends||[],pin=data.pending_in||[];
+  $("frcount").textContent=`${fr.length} / 50`;
+  $("frlist").innerHTML=fr.length?fr.map(f=>
+   `<div class="friend"><div class="ava">⭐</div><div class="who"><b>${esc(f.nick)}</b><small>${esc(f.code)}</small></div>
+    <button class="small gift" data-code="${esc(f.code)}">선물</button></div>`).join("")
+   :'<p class="note">아직 친구가 없어요. 내 코드를 친구한테 보내 보세요!</p>';
+  $("reqPanel").hidden=!pin.length;
+  $("reqlist").innerHTML=pin.map(q=>
+   `<div class="friend"><div class="ava">⭐</div><div class="who"><b>${esc(q.nick)}</b><small>친구 요청</small></div>
+    <button class="small acc" data-id="${q.from_id}">수락</button><button class="alt small dec" data-id="${q.from_id}">거절</button></div>`).join("");
+  document.querySelectorAll(".acc").forEach(b=>b.onclick=()=>respond(b.dataset.id,true));
+  document.querySelectorAll(".dec").forEach(b=>b.onclick=()=>respond(b.dataset.id,false));
+  document.querySelectorAll(".gift").forEach(b=>b.onclick=()=>gift(b.dataset.code));
+ }catch(e){}
+}
+const esc=t=>String(t).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+async function respond(id,ok){const {data}=await sb.rpc("respond_friend_request",{p_from:id,p_accept:ok});
+ if(data&&data.error==="cap")toast("친구가 50명이라 더 받을 수 없어요");else toast(ok?"친구가 됐어요!":"거절했어요");loadFriends()}
+$("addfr").onclick=async()=>{
+ const v=$("addcode").value.trim();if(!v){toast("코드를 입력해 주세요");return}
+ const {data,error}=await sb.rpc("send_friend_request",{p_code:v});
+ if(error){toast("요청에 실패했어요");return}
+ const msg={not_found:"그 코드를 가진 사람이 없어요",self:"자기 자신은 추가할 수 없어요",
+  blocked:"차단 관계라 요청할 수 없어요",already:"이미 친구예요",cap:"친구가 50명이라 더 못 넣어요"};
+ toast(data.error?msg[data.error]:"요청을 보냈어요! 상대가 수락하면 친구가 돼요");
+ if(!data.error)$("addcode").value="";
+};
+async function gift(code){
+ const dups=Object.entries(OWNED).filter(([k,n])=>n>1);
+ if(!dups.length){toast("선물은 겹친 카드만 보낼 수 있어요");return}
+ const pick=prompt("어떤 카드를 선물할까요?\n"+dups.map(([k,n],i)=>`${i+1}. ${k} (×${n})`).join("\n")+"\n번호를 입력:");
+ const i=parseInt(pick)-1;if(isNaN(i)||!dups[i])return;
+ const key=dups[i][0];
+ const {data:rows}=await sb.from("cards").select("id").eq("card_key",key).limit(1);
+ if(!rows||!rows.length)return;
+ const {data}=await sb.rpc("gift_card",{p_card_id:rows[0].id,p_code:code});
+ if(data&&data.ok){OWNED[key]--;toast("선물을 보냈어요! 🎁");renderDex()}
+ else toast("선물을 보내지 못했어요");
+}
+$("doReport").onclick=async()=>{
+ const v=$("repcode").value.trim();if(!v){toast("상대 코드를 입력해 주세요");return}
+ const reason=prompt("무슨 일인지 짧게 적어 주세요:");if(!reason)return;
+ const {error}=await sb.from("reports").insert({reporter:P.id,target_friend_code:v.toUpperCase(),reason});
+ toast(error?"신고에 실패했어요":"신고했어요. 운영자가 확인할 거예요");
+};
+$("doBlock").onclick=async()=>{
+ const v=$("repcode").value.trim();if(!v){toast("상대 코드를 입력해 주세요");return}
+ const {data}=await sb.rpc("block_user",{p_code:v});
+ toast(data&&data.ok?"차단했어요":"차단하지 못했어요");loadFriends();
+};
 
 // 시작: 로그인돼 있으면 바로 입장
 (async()=>{if(await loadProfile())enter()})();
