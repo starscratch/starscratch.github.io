@@ -113,6 +113,14 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem}
         </select></div>
       <button id="su1next" disabled>다음</button>
       <p class="note">전화번호, 실명, 주소는 받지 않아요.</p>
+      <button class="alt small" id="showLogin">이미 계정 있어요 (복구 코드로 로그인)</button>
+    </div>
+
+    <div class="panel" id="suLogin" hidden>
+      <h2>복구 코드로 로그인</h2>
+      <div><label for="loginCode">복구 코드</label><input id="loginCode" placeholder="SNOW-····-····" autocapitalize="characters"></div>
+      <button id="doLogin">로그인</button>
+      <button class="alt small" id="hideLogin">처음부터 가입할래요</button>
     </div>
 
     <div class="panel" id="su2" hidden>
@@ -162,10 +170,10 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem}
 
   <!-- ███ 친구 ███ -->
   <div class="screen" id="scr-friends" hidden>
-    <header><h1>친구</h1><p class="sub">친구 코드로만 추가할 수 있어요 (최대 50명)</p></header>
+    <header><h1>친구</h1><p class="sub">친구 코드로만 추가할 수 있어요 (최대 50명) · 아래 목록은 예시이고, 진짜 친구 기능은 곧 열려요</p></header>
     <div class="panel">
       <label>내 친구 코드</label>
-      <div class="code" id="mycode">STAR-7F2K</div>
+      <div class="code" id="mycode">·····</div>
       <button class="alt small" id="copyCode">코드 복사하기</button>
     </div>
     <div class="panel">
@@ -199,7 +207,13 @@ summary{cursor:pointer;font-family:var(--display);font-size:1rem}
 </div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
+const SB_URL="https://hnfvxatpdubxqziqmscx.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuZnZ4YXRwZHVieHF6aXFtc2N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUzMzA4NDYsImV4cCI6MjExMDkwNjg0Nn0.MjHffzalusayiEefNXBq_IX_UYKU3a_cwfudameY-EI";
+let sb=null;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){}
+const needSb=()=>{if(!sb){alert_off=1;throw new Error("offline")}};
+
 const TIERS={common:{label:"일반",p:60,dust:5,color:"var(--r-common)"},rare:{label:"희귀",p:28,dust:20,color:"var(--r-rare)"},hero:{label:"영웅",p:9,dust:60,color:"var(--r-hero)"},legend:{label:"전설",p:2.5,dust:150,color:"var(--r-legend)"},limited:{label:"한정",p:0.5,dust:200,color:"var(--r-limited)"}};
 const CARDS=[["솜솜","common","#f4f6ff","#9fb0d6","bunny","scarf"],["귤냥","common","#ffb15c","#e2546b","cat","none"],["뭉치","common","#ffffff","#3fae8a","round","hat"],["도리","common","#3a4466","#ffd36b","round","scarf"],["붕이","common","#d99a4e","#7a4a1e","bear","none"],["코코","common","#8a5a3c","#f4f6ff","dog","mug"],["반짝","rare","#c9874b","#f2c35b","squirrel","star"],["호호","rare","#ff8a4c","#fff1c9","fox","none"],["딩동","rare","#7c6aa8","#f2c35b","owl","bell"],["초록","rare","#3fae8a","#f2c35b","round","star"],["따끔","hero","#6b4a3a","#e2546b","hedgehog","hat"],["설탕별","hero","#b98cff","#ffffff","bunny","star"],["오로라","hero","#5fb6ff","#b98cff","cat","scarf"],["겨울왕고래","legend","#2e5fa8","#9fe3ff","round","star"],["첫눈 요정","legend","#eef2fb","#f2c35b","bunny","bell"],["성탄밤","limited","#e2546b","#f2c35b","owl","hat"]];
 function art(c){const[,,b,a,ear,item]=c;let ears="";
@@ -221,10 +235,29 @@ function art(c){const[,,b,a,ear,item]=c;let ears="";
 
 const $=id=>document.getElementById(id);
 function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2400)}
-const KEY="star-scratch-mock-v1";
-let S={nick:"",grade:"",left:3,dust:120,pity:31,owned:{"귤냥":1,"솜솜":2}};
-try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v)S=Object.assign(S,v)}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+// ── 서버 상태 ──
+let P=null;            // profiles 행
+let OWNED={};          // card_key -> 개수
+const todayStr=()=>new Date().toISOString().slice(0,10);
+const codeGen=(w)=>{const r=()=>Math.random().toString(36).slice(2,6).toUpperCase();return `${w}-${r()}-${r()}`};
+const S={get nick(){return P?P.nick:""},get grade(){return P?P.grade:""},
+ get left(){return P?Math.max(0,3-P.draws_today):0},get dust(){return P?P.dust:0},get pity(){return P?P.pity:31},
+ get owned(){return OWNED}};
+async function loadProfile(){
+ if(!sb)return false;
+ const {data:{user}}=await sb.auth.getUser();
+ if(!user)return false;
+ let {data:p,error}=await sb.from("profiles").select("*").eq("id",user.id).single();
+ if(error||!p)return false;
+ if(p.last_draw_date!==todayStr()){
+  const {data:q}=await sb.from("profiles").update({draws_today:0,last_draw_date:todayStr()}).eq("id",user.id).select().single();
+  if(q)p=q;
+ }
+ P=p;
+ const {data:cs}=await sb.from("cards").select("card_key");
+ OWNED={};(cs||[]).forEach(c=>OWNED[c.card_key]=(OWNED[c.card_key]||0)+1);
+ return true;
+}
 
 // ── 화면 전환 ──
 const SCREENS=["signup","draw","dex","friends"];
@@ -240,37 +273,78 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>show(b.dataset.
 const minor=g=>/초등|중학교 1|중학교 2/.test(g);
 function chk1(){$("su1next").disabled=!($("nick").value.trim()&&$("grade").value)}
 $("nick").oninput=chk1;$("grade").onchange=chk1;
+let pend={nick:"",grade:"",guardian:null};
 $("su1next").onclick=()=>{
- S.nick=$("nick").value.trim();S.grade=$("grade").value;save();
- if(minor(S.grade)){$("su1").hidden=true;$("su2").hidden=false;$("st2").classList.add("on")}
+ pend.nick=$("nick").value.trim();pend.grade=$("grade").value;
+ if(minor(pend.grade)){$("su1").hidden=true;$("su2").hidden=false;$("st2").classList.add("on")}
  else goRecovery();
 };
 $("pmail").oninput=()=>{$("su2next").disabled=!$("pmail").value.includes("@")};
-$("su2next").onclick=()=>{toast("보호자께 동의 메일을 보냈어요 (목업이라 흉내만 내요)");goRecovery()};
-function goRecovery(){
+$("su2next").onclick=()=>{pend.guardian=$("pmail").value.trim();goRecovery()};
+async function goRecovery(){
  $("su1").hidden=true;$("su2").hidden=true;$("su3").hidden=false;
  $("st2").classList.add("on");$("st3").classList.add("on");
- const w=["SNOW","STAR","MOON","BELL"][Math.floor(Math.random()*4)];
- const r=()=>Math.random().toString(36).slice(2,6).toUpperCase();
- $("recovery").textContent=`${w}-${r()}-${r()}`;
+ const code=codeGen(["SNOW","STAR","MOON","BELL"][Math.floor(Math.random()*4)]);
+ $("recovery").textContent=code;
+ $("su3done").disabled=true;$("su3done").textContent="만드는 중…";
+ try{
+  const email=code.toLowerCase().replace(/-/g,"")+"@login.starscratch.app";
+  const {data:au,error:e1}=await sb.auth.signUp({email,password:"sc-"+code});
+  if(e1)throw e1;
+  const {error:e2}=await sb.from("profiles").insert({
+   id:au.user.id,nick:pend.nick,grade:pend.grade,
+   guardian_email:pend.guardian,guardian_consented:false,
+   recovery_code:code,friend_code:codeGen("STAR").slice(0,9),
+   last_draw_date:todayStr()});
+  if(e2)throw e2;
+  $("su3done").disabled=false;$("su3done").textContent="적어 뒀어요, 시작!";
+ }catch(err){
+  $("su3done").textContent="다시 시도";$("su3done").disabled=false;
+  $("su3done").onclick=()=>location.reload();
+  toast("계정을 만들지 못했어요: "+(err.message||err));
+ }
 }
+$("showLogin").onclick=()=>{$("su1").hidden=true;$("suLogin").hidden=false};
+$("hideLogin").onclick=()=>{$("suLogin").hidden=true;$("su1").hidden=false};
+$("doLogin").onclick=async()=>{
+ const code=$("loginCode").value.trim().toUpperCase();
+ if(!code){toast("복구 코드를 입력해 주세요");return}
+ $("doLogin").disabled=true;
+ const email=code.toLowerCase().replace(/-/g,"")+"@login.starscratch.app";
+ const {error}=await sb.auth.signInWithPassword({email,password:"sc-"+code});
+ $("doLogin").disabled=false;
+ if(error){toast("코드가 맞지 않아요. 다시 확인해 주세요");return}
+ await enter();
+};
 $("copyRec").onclick=async()=>{try{await navigator.clipboard.writeText($("recovery").textContent);toast("복사했어요")}catch(e){toast("길게 눌러서 직접 복사해 주세요")}};
-$("su3done").onclick=()=>{save();$("hello").textContent=`${S.nick} · ${S.grade}`;show("draw");render()};
+$("su3done").onclick=async()=>{if(await loadProfile())enter();else toast("잠시 뒤 다시 눌러 주세요")};
+async function enter(){
+ if(!P)await loadProfile();
+ $("hello").textContent=`${P.nick} · ${P.grade}`;
+ $("mycode").textContent=P.friend_code;
+ show("draw");render();
+}
 
 // ── 뽑기 ──
 let busy=false;
 function pickTier(){if(S.pity<=1){const r=Math.random()*12;return r<9?"hero":r<11.5?"legend":"limited"}
  let r=Math.random()*100;for(const k of Object.keys(TIERS)){if((r-=TIERS[k].p)<0)return k}return"common"}
-function draw(paid){
- if(busy)return;
+async function draw(paid){
+ if(busy||!P)return;
  if(!paid&&S.left<=0){toast("오늘 무료 뽑기는 끝! 내일 또 와요");return}
- if(paid&&S.dust<100){toast("별가루가 100 필요해요");return}
- paid?S.dust-=100:S.left--;
- const tier=pickTier();S.pity=(tier==="common"||tier==="rare")?S.pity-1:31;
+ if(paid&&P.dust<100){toast("별가루가 100 필요해요");return}
+ const tier=pickTier();
  const pool=CARDS.filter(c=>c[1]===tier);const c=pool[Math.floor(Math.random()*pool.length)];
- const dup=!!S.owned[c[0]];S.owned[c[0]]=(S.owned[c[0]]||0)+1;
- if(dup)S.dust+=TIERS[tier].dust;
- save();reveal(c,dup);render();
+ const dup=!!OWNED[c[0]];
+ const upd={pity:(tier==="common"||tier==="rare")?P.pity-1:31};
+ if(paid)upd.dust=P.dust-100;else upd.draws_today=P.draws_today+1;
+ if(dup)upd.dust=(upd.dust??P.dust)+TIERS[tier].dust;
+ const {error:e1}=await sb.from("cards").insert({owner:P.id,card_key:c[0],tier});
+ if(e1){toast("저장에 실패했어요. 인터넷을 확인해 주세요");return}
+ const {data:q,error:e2}=await sb.from("profiles").update(upd).eq("id",P.id).select().single();
+ if(q)P=q;else if(e2){toast("저장에 실패했어요");return}
+ OWNED[c[0]]=(OWNED[c[0]]||0)+1;
+ reveal(c,dup);render();
 }
 function reveal(c,dup){
  const t=TIERS[c[1]];const now=new Date();
@@ -316,7 +390,7 @@ function renderDex(){
 
 // ── 친구 ──
 document.querySelectorAll(".ava").forEach(a=>a.innerHTML=art(CARDS[+a.dataset.char]));
-$("copyCode").onclick=async()=>{try{await navigator.clipboard.writeText("STAR-7F2K");toast("복사했어요")}catch(e){toast("길게 눌러서 복사해 주세요")}};
+$("copyCode").onclick=async()=>{try{await navigator.clipboard.writeText($("mycode").textContent);toast("복사했어요")}catch(e){toast("길게 눌러서 복사해 주세요")}};
 $("addfr").onclick=()=>{const v=$("addcode").value.trim();if(!v){toast("코드를 입력해 주세요");return}
  toast(`${v}님께 친구 요청을 보냈어요 (수락하면 친구가 돼요)`);$("addcode").value=""};
 $("acc1").onclick=()=>{$("req1").innerHTML=`<div class="ava"></div><div class="who"><b>눈덩이굴리기</b><small>방금 친구가 됐어요 🎉</small></div>`;
@@ -325,13 +399,13 @@ $("dec1").onclick=()=>{$("req1").remove();toast("요청을 거절했어요")};
 document.querySelectorAll(".gift").forEach(b=>b.onclick=()=>toast("선물할 카드 고르기 화면이 열려요 (목업)"));
 document.querySelectorAll(".block").forEach(b=>b.onclick=()=>toast("차단하면 서로 보이지 않아요 (목업이라 흉내만)"));
 
+// 시작: 로그인돼 있으면 바로 입장
+(async()=>{if(await loadProfile())enter()})();
 // 카톡 인앱 브라우저 감지
 if(/KAKAOTALK/i.test(navigator.userAgent)){
  SCREENS.push("kakao");show("kakao");
  document.getElementById("kakaoCopy").onclick=async()=>{try{await navigator.clipboard.writeText(location.href);toast("복사했어요. 다른 브라우저에 붙여 넣으세요")}catch(e){toast("주소창을 길게 눌러 복사해 주세요")}};
  document.getElementById("kakaoGo").onclick=()=>{S.nick?show("draw"):show("signup")};
 }
-// 시작
-if(S.nick){$("hello").textContent=`${S.nick} · ${S.grade}`;show("draw")}else show("signup");
-render();
+show("signup");render();
 </script>
