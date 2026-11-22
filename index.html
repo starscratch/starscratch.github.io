@@ -45,7 +45,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .slot{position:relative;width:min(230px,62vw);aspect-ratio:5/7;max-width:100%}
 .card{position:absolute;inset:0;border-radius:16px;overflow:hidden;background:linear-gradient(160deg,#eaf1ff,#dce7fb);border:3px solid var(--c,var(--r-common));display:flex;flex-direction:column;box-shadow:0 10px 28px rgba(29,42,77,.18)}
 .card .art{flex:1;display:grid;place-items:center;position:relative}
-.card .art svg{width:76%;height:auto}
+.card .art svg{width:76%;height:auto;position:relative;z-index:1}
+.card .art svg.bg{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.card .art svg.wx{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+.card .tier{z-index:3}
 .card .tier{position:absolute;top:9px;left:9px;font-family:var(--display);font-size:.9rem;padding:2px 9px;border-radius:99px;background:var(--c);color:#fff}
 .card .name{font-family:var(--display);font-size:1.35rem;text-align:center;color:var(--navy)}
 .card .imprint{font-family:var(--mono);font-size:.62rem;color:var(--muted);border-top:1px dashed var(--line);margin:7px 11px 0;padding:7px 0 10px;line-height:1.5;text-align:center}
@@ -242,6 +245,29 @@ function art(c){const[,,b,a,ear,item]=c;let ears="";
  const beak=ear==="owl"?`<path d="M46 62 L54 62 L50 69Z" fill="#f2c35b"/><circle cx="40" cy="54" r="9" fill="#fff"/><circle cx="60" cy="54" r="9" fill="#fff"/>`:"";
  return `<svg viewBox="0 0 100 104" aria-hidden="true">${ear==="hedgehog"?ears:""}<ellipse cx="50" cy="96" rx="28" ry="5" fill="rgba(0,0,0,.25)"/>${ear!=="hedgehog"?ears:""}<circle cx="50" cy="60" r="32" fill="${b}"/>${beak}${snout}<circle cx="40" cy="55" r="3.6" fill="#1b2030"/><circle cx="60" cy="55" r="3.6" fill="#1b2030"/><circle cx="41.3" cy="53.6" r="1.2" fill="#fff"/><circle cx="61.3" cy="53.6" r="1.2" fill="#fff"/><ellipse cx="32" cy="66" rx="5" ry="3" fill="#ff9fb0" opacity=".6"/><ellipse cx="68" cy="66" rx="5" ry="3" fill="#ff9fb0" opacity=".6"/><path d="M46 69 q4 4 8 0" stroke="#1b2030" stroke-width="2" fill="none" stroke-linecap="round"/>${it}</svg>`;}
 
+
+// ── 카드 배경 (지역별) ──
+function bgArt(region){
+ const sky={"서울":"#cfe3ff","부산":"#c8ecf7","제주":"#d6f3e3","대구":"#ffe9c9","광주":"#e8e2f8","강원":"#dfe9f6"}[region]||"#dbe7fb";
+ let scene="";
+ if(region==="서울")scene='<rect x="8" y="46" width="12" height="38" rx="1.5" fill="#9fb3d9"/><rect x="24" y="36" width="14" height="48" rx="1.5" fill="#8aa1cf"/><rect x="72" y="42" width="12" height="42" rx="1.5" fill="#9fb3d9"/><rect x="86" y="52" width="9" height="32" rx="1.5" fill="#b3c4e4"/><rect x="27" y="41" width="3" height="4" fill="#fff"/><rect x="33" y="48" width="3" height="4" fill="#fff"/><rect x="75" y="47" width="3" height="4" fill="#fff"/>';
+ else if(region==="부산")scene='<path d="M0 62 Q25 56 50 62 T100 62 V84 H0 Z" fill="#6fc4e8"/><path d="M0 70 Q25 64 50 70 T100 70 V84 H0 Z" fill="#53b1dd" opacity=".8"/><path d="M78 34 l4 10 10 1-8 6 3 10-9-6-9 6 3-10-8-6 10-1z" fill="#fff" opacity=".55"/>';
+ else if(region==="제주")scene='<path d="M-5 84 Q30 58 55 76 T105 80 V84 H-5 Z" fill="#8fd6ae"/><path d="M70 40 q3 -14 10 -18 q-1 10 4 16 q6 -4 12 -2 q-6 7 -5 13 l-21 1 z" fill="#4faf79"/><rect x="78" y="48" width="4" height="22" fill="#9a6a3f"/>';
+ else if(region==="대구")scene='<circle cx="20" cy="66" r="12" fill="#86c98f"/><rect x="18" y="70" width="4" height="14" fill="#8a6a46"/><circle cx="84" cy="62" r="14" fill="#9ad3a0"/><rect x="82" y="68" width="4" height="16" fill="#8a6a46"/><rect x="0" y="80" width="100" height="4" fill="#bfe3c3"/>';
+ else if(region==="광주")scene='<path d="M0 74 Q50 62 100 74 V84 H0 Z" fill="#b9dba4"/><circle cx="26" cy="70" r="5" fill="#f2c35b"/><circle cx="44" cy="73" r="4" fill="#e2546b" opacity=".7"/><circle cx="62" cy="71" r="4.5" fill="#9b6fe8" opacity=".6"/>';
+ else if(region==="강원")scene='<path d="M-4 84 L28 38 L46 66 L62 30 L104 84 Z" fill="#aebfd9"/><path d="M62 30 L70 44 L62 46 L54 44 Z" fill="#fff"/><path d="M28 38 L34 48 L28 50 L22 48 Z" fill="#fff"/>';
+ return `<svg viewBox="0 0 100 104" class="bg" aria-hidden="true"><rect width="100" height="104" fill="${sky}"/>${scene}</svg>`;
+}
+// ── 날씨 효과 ──
+function wxArt(w){
+ let fx="";
+ if(w==="눈")fx=[...Array(14)].map((_,i)=>`<circle cx="${(i*37)%100}" cy="${(i*23+9)%100}" r="${1.2+(i%3)*.6}" fill="#fff" opacity=".9"/>`).join("");
+ else if(w==="비")fx=[...Array(12)].map((_,i)=>`<line x1="${(i*31+5)%100}" y1="${(i*17)%90}" x2="${(i*31+2)%100}" y2="${(i*17)%90+8}" stroke="#5b8fd4" stroke-width="1.6" opacity=".7"/>`).join("");
+ else if(w==="흐림")fx='<ellipse cx="28" cy="16" rx="16" ry="7" fill="#fff" opacity=".85"/><ellipse cx="42" cy="13" rx="12" ry="6" fill="#fff" opacity=".85"/><ellipse cx="74" cy="22" rx="14" ry="6" fill="#fff" opacity=".7"/>';
+ else fx='<circle cx="82" cy="16" r="9" fill="#ffd978"/><g stroke="#ffd978" stroke-width="2"><line x1="82" y1="2" x2="82" y2="6"/><line x1="96" y1="16" x2="92" y2="16"/><line x1="91" y1="7" x2="88" y2="10"/></g>';
+ return `<svg viewBox="0 0 100 104" class="wx" aria-hidden="true">${fx}</svg>`;
+}
+
 const $=id=>document.getElementById(id);
 function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2400)}
 // ── 서버 상태 ──
@@ -360,7 +386,7 @@ function reveal(c,dup,gain){
  const t=TIERS[c[1]];const now=new Date();
  const stamp=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,"0")}.${String(now.getDate()).padStart(2,"0")}`;
  const slot=$("slot");
- slot.innerHTML=`<div class="card" style="--c:${t.color}"><div class="art"><span class="tier">${t.label}</span>${art(c)}</div><div class="name">${c[0]}</div><div class="imprint">${stamp} · ${S.nick}의 카드</div></div><canvas class="scratch"></canvas>`;
+ slot.innerHTML=`<div class="card" style="--c:${t.color}"><div class="art">${bgArt($("region").value)}<span class="tier">${t.label}</span>${art(c)}${wxArt($("weather").value)}</div><div class="name">${c[0]}</div><div class="imprint">${stamp} · ${S.nick}의 카드</div></div><canvas class="scratch"></canvas>`;
  busy=true;$("hint").textContent="은박을 긁어 보세요";
  const cv=slot.querySelector("canvas"),r=slot.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
  cv.width=r.width*dpr;cv.height=r.height*dpr;
